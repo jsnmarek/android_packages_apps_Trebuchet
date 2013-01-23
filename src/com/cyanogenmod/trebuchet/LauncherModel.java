@@ -2076,6 +2076,7 @@ public class LauncherModel extends BroadcastReceiver {
                     for (String p : packages) {
                         if (DEBUG_LOADERS) Log.d(TAG, "mAllAppsList.updatePackage " + p);
                         mBgAllAppsList.updatePackage(context, p);
+                        WidgetPreviewLoader.removeFromDb(context, p);
                     }
                     break;
                 case OP_REMOVE:
@@ -2083,6 +2084,7 @@ public class LauncherModel extends BroadcastReceiver {
                     for (String p : packages) {
                         if (DEBUG_LOADERS) Log.d(TAG, "mAllAppsList.removePackage " + p);
                         mBgAllAppsList.removePackage(p);
+                        WidgetPreviewLoader.removeFromDb(context, p);
                     }
                     break;
             }
