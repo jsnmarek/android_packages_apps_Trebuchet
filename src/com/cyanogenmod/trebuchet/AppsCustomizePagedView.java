@@ -1437,6 +1437,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
                                 maxPreviewWidth, maxPreviewHeight);
                     }
                 }
+                layout.setOnLayoutListener(null);
             }
         });
     }
