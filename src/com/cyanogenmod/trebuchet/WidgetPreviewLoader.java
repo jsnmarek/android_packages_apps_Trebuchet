@@ -264,7 +264,7 @@ public class WidgetPreviewLoader {
 
         @Override
         public void onCreate(SQLiteDatabase database) {
-            database.execSQL("CREATE TABLE " + TABLE_NAME + " (" +
+            database.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
                     COLUMN_NAME + " TEXT NOT NULL, " +
                     COLUMN_SIZE + " TEXT NOT NULL, " +
                     COLUMN_PREVIEW_BITMAP + " BLOB NOT NULL, " +
