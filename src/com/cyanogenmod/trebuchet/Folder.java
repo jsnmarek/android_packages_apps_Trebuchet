@@ -460,15 +460,7 @@ public class Folder extends LinearLayout implements DragSource, View.OnClickList
         });
         oa.setDuration(mExpandDuration);
         setLayerType(LAYER_TYPE_HARDWARE, null);
-        buildLayer();
-        post(new Runnable() {
-            public void run() {
-                // Check if the animator changed in the meantime
-                if (oa != mOpenCloseAnimator)
-                    return;
-                oa.start();
-            }
-        });
+        oa.start();
     }
 
     private void sendCustomAccessibilityEvent(int type, String text) {
@@ -513,15 +505,7 @@ public class Folder extends LinearLayout implements DragSource, View.OnClickList
         });
         oa.setDuration(mExpandDuration);
         setLayerType(LAYER_TYPE_HARDWARE, null);
-        buildLayer();
-        post(new Runnable() {
-            public void run() {
-                // Check if the animator changed in the meantime
-                if (oa != mOpenCloseAnimator)
-                    return;
-                oa.start();
-            }
-        });
+        oa.start();
     }
 
     void notifyDataSetChanged() {
