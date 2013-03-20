@@ -338,7 +338,6 @@ public class WidgetPreviewLoader {
                             WIDGET_PREFIX + packageName + "/%",
                             SHORTCUT_PREFIX + packageName + "/%"} // args to SELECT query
                             );
-                db.close();
                 synchronized(sInvalidPackages) {
                     sInvalidPackages.remove(packageName);
                 }
