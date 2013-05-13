@@ -4329,6 +4329,60 @@ public class Workspace extends PagedView
         final HashSet<String> packageNames = new HashSet<String>();
         packageNames.addAll(packages);
 
+        // Just create a hash table of all the specific components that this will affect
+        HashSet<ComponentName> cns = new HashSet<ComponentName>();
+        ArrayList<CellLayout> cellLayouts = getWorkspaceAndHotseatCellLayouts();
+        for (CellLayout layoutParent : cellLayouts) {
+            ViewGroup layout = layoutParent.getShortcutsAndWidgets();
+            int childCount = layout.getChildCount();
+            for (int i = 0; i < childCount; ++i) {
+                View view = layout.getChildAt(i);
+                Object tag = view.getTag();
+
+                if (tag instanceof ShortcutInfo) {
+                    ShortcutInfo info = (ShortcutInfo) tag;
+                    ComponentName cn = info.intent.getComponent();
+                    if ((cn != null) && packageNames.contains(cn.getPackageName())) {
+                        cns.add(cn);
+                    }
+                } else if (tag instanceof FolderInfo) {
+                    FolderInfo info = (FolderInfo) tag;
+                    for (ShortcutInfo s : info.contents) {
+                        ComponentName cn = s.intent.getComponent();
+                        if ((cn != null) && packageNames.contains(cn.getPackageName())) {
+                            cns.add(cn);
+                        }
+                    }
+                } else if (tag instanceof LauncherAppWidgetInfo) {
+                    LauncherAppWidgetInfo info = (LauncherAppWidgetInfo) tag;
+                    ComponentName cn = info.providerName;
+                    if ((cn != null) && packageNames.contains(cn.getPackageName())) {
+                        cns.add(cn);
+                    }
+                }
+            }
+        }
+
+        // Remove all the things
+        removeItemsByComponentName(cns);
+    }
+
+    // Removes items that match the application info specified, when applications are removed
+    // as a part of an update, this is called to ensure that other widgets and application
+    // shortcuts are not removed.
+    void removeItemsByApplicationInfo(final ArrayList<ApplicationInfo> appInfos) {
+        // Just create a hash table of all the specific components that this will affect
+        HashSet<ComponentName> cns = new HashSet<ComponentName>();
+        for (ApplicationInfo info : appInfos) {
+            cns.add(info.componentName);
+        }
+
+        // Remove all the things
+        removeItemsByComponentName(cns);
+    }
+
+    void removeItemsByComponentName(final HashSet<ComponentName> componentNames) {
+
         ArrayList<CellLayout> cellLayouts = getWorkspaceAndHotseatCellLayouts();
         for (final CellLayout layoutParent: cellLayouts) {
             final ViewGroup layout = layoutParent.getShortcutsAndWidgets();
