@@ -287,6 +287,9 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
 
     WidgetPreviewLoader mWidgetPreviewLoader;
 
+    private boolean mInBulkBind;
+    private boolean mNeedToUpdatePageCountsAndInvalidateData;
+
     public AppsCustomizePagedView(Context context, AttributeSet attrs) {
         super(context, attrs);
         mLayoutInflater = LayoutInflater.from(context);
@@ -565,42 +568,60 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
-    public void onPackagesUpdated() {
+    public void onPackagesUpdated(ArrayList<Object> widgetsAndShortcuts) {
         // Get the list of widgets and shortcuts
         mWidgets.clear();
-        List<AppWidgetProviderInfo> widgets =
-            AppWidgetManager.getInstance(mLauncher).getInstalledProviders();
-        Intent shortcutsIntent = new Intent(Intent.ACTION_CREATE_SHORTCUT);
-        List<ResolveInfo> shortcuts = mPackageManager.queryIntentActivities(shortcutsIntent, 0);
-        for (AppWidgetProviderInfo widget : widgets) {
-            widget.label = widget.label.trim();
-            if (widget.minWidth > 0 && widget.minHeight > 0) {
-                // Ensure that all widgets we show can be added on a workspace of this size
-                int[] spanXY = Launcher.getSpanForWidget(mLauncher, widget);
-                int[] minSpanXY = Launcher.getMinSpanForWidget(mLauncher, widget);
-                int minSpanX = Math.min(spanXY[0], minSpanXY[0]);
-                int minSpanY = Math.min(spanXY[1], minSpanXY[1]);
-                if (minSpanX <= LauncherModel.getWorkspaceCellCountX() &&
+        for (Object o : widgetsAndShortcuts) {
+            if (o instanceof AppWidgetProviderInfo) {
+                AppWidgetProviderInfo widget = (AppWidgetProviderInfo) o;
+                widget.label = widget.label.trim();
+                if (widget.minWidth > 0 && widget.minHeight > 0) {
+                    // Ensure that all widgets we show can be added on a workspace of this size
+                    int[] spanXY = Launcher.getSpanForWidget(mLauncher, widget);
+                    int[] minSpanXY = Launcher.getMinSpanForWidget(mLauncher, widget);
+                    int minSpanX = Math.min(spanXY[0], minSpanXY[0]);
+                    int minSpanY = Math.min(spanXY[1], minSpanXY[1]);
+                    if (minSpanX <= LauncherModel.getWorkspaceCellCountX() &&
                         minSpanY <= LauncherModel.getWorkspaceCellCountY()) {
-                    if (widget.provider != null) {
-                        if (!mHiddenAppsPackages.contains(widget.provider.getPackageName())) {
-                            mWidgets.add(widget);
-                        }
+                        mWidgets.add(widget);
+                    } else {
+                        Log.e(TAG, "Widget " + widget.provider + " can not fit on this device (" +
+                              widget.minWidth + ", " + widget.minHeight + ")");
                     }
                 } else {
-                    Log.e(TAG, "Widget " + widget.provider + " can not fit on this device (" +
-                            widget.minWidth + ", " + widget.minHeight + ")");
+                    Log.e(TAG, "Widget " + widget.provider + " has invalid dimensions (" +
+                          widget.minWidth + ", " + widget.minHeight + ")");
                 }
             } else {
-                Log.e(TAG, "Widget " + widget.provider + " has invalid dimensions (" +
-                        widget.minWidth + ", " + widget.minHeight + ")");
+                // just add shortcuts
+                mWidgets.add(o);
             }
         }
-        mWidgets.addAll(shortcuts);
         Collections.sort(mWidgets,
                 new LauncherModel.WidgetAndShortcutNameComparator(mPackageManager));
-        updatePageCounts();
-        invalidateOnDataChange();
+
+        updatePageCountsAndInvalidateData();
+    }
+
+    public void setBulkBind(boolean bulkBind) {
+        if (bulkBind) {
+            mInBulkBind = true;
+        } else {
+            mInBulkBind = false;
+            if (mNeedToUpdatePageCountsAndInvalidateData) {
+                updatePageCountsAndInvalidateData();
+            }
+        }
+    }
+
+    private void updatePageCountsAndInvalidateData() {
+        if (mInBulkBind) {
+            mNeedToUpdatePageCountsAndInvalidateData = true;
+        } else {
+            updatePageCounts();
+            invalidateOnDataChange();
+            mNeedToUpdatePageCountsAndInvalidateData = false;
+        }
     }
 
     @Override
@@ -2127,8 +2148,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     public void setApps(ArrayList<ApplicationInfo> list) {
         mApps = list;
         filterAppsWithoutInvalidate();
-        updatePageCounts();
-        invalidateOnDataChange();
+        updatePageCountsAndInvalidateData();
     }
     private void addAppsWithoutInvalidate(ArrayList<ApplicationInfo> list) {
         // We add it in place, in alphabetical order
@@ -2142,8 +2162,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     public void addApps(ArrayList<ApplicationInfo> list) {
         addAppsWithoutInvalidate(list);
         filterAppsWithoutInvalidate();
-        updatePageCounts();
-        invalidateOnDataChange();
+        updatePageCountsAndInvalidateData();
     }
     private int findAppByComponent(List<ApplicationInfo> list, ApplicationInfo item) {
         ComponentName removeComponent = item.intent.getComponent();
@@ -2188,8 +2207,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     public void removeApps(ArrayList<String> packageNames) {
         removeAppsWithPackageNameWithoutInvalidate(packageNames);
         filterAppsWithoutInvalidate();
-        updatePageCounts();
-        invalidateOnDataChange();
+        updatePageCountsAndInvalidateData();
     }
     public void updateApps(ArrayList<ApplicationInfo> list) {
         // We remove and re-add the updated applications list because it's properties may have
@@ -2198,8 +2216,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
         removeAppsWithoutInvalidate(list);
         addAppsWithoutInvalidate(list);
         filterAppsWithoutInvalidate();
-        updatePageCounts();
-        invalidateOnDataChange();
+        updatePageCountsAndInvalidateData();
     }
     public void filterAppsWithoutInvalidate() {
         mFilteredApps = new ArrayList<ApplicationInfo>(mApps);
@@ -2221,8 +2238,7 @@ public class AppsCustomizePagedView extends PagedViewWithDraggableItems implemen
     }
     public void filterApps() {
         filterAppsWithoutInvalidate();
-        updatePageCounts();
-        invalidateOnDataChange();
+        updatePageCountsAndInvalidateData();
     }
 
     public void reset() {
