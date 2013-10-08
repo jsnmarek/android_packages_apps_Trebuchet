@@ -49,9 +49,7 @@ public class InfoDropTarget extends ButtonDropTarget {
         Resources r = getResources();
         mHoverColor = r.getColor(R.color.info_target_hover_tint);
         mDrawable = (TransitionDrawable) getCurrentDrawable();
-        if (null != mDrawable) {
-            mDrawable.setCrossFadeEnabled(true);
-        }
+        mDrawable.setCrossFadeEnabled(true);
 
         // Remove the text in landscape
         int orientation = getResources().getConfiguration().orientation;

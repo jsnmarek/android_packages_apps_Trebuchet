@@ -26,7 +26,7 @@
         android:textSize="20dp"
         android:textColor="@android:color/holo_blue_light"
         android:text="@string/dummy_custom_cling_error_message"
-        android:gravity="start"
-        android:layout_gravity="bottom|start"
+        android:gravity="left"
+        android:layout_gravity="bottom|left"
     />
 </com.cyanogenmod.trebuchet.Cling>
